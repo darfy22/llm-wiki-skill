@@ -55,6 +55,22 @@ bash install.sh --platform openclaw
 
 旧的 Claude 安装方式仍然保留给现有用户：`bash setup.sh`。它现在只是统一安装器的兼容入口。
 
+### 更新
+
+已安装过 llm-wiki 后，进入仓库目录执行：
+
+```bash
+bash install.sh --upgrade
+```
+
+会自动完成：
+1. `git pull` 拉取最新代码
+2. 检测你已安装的平台（Claude / Codex / OpenClaw）
+3. 重新复制文件并安装依赖
+4. 已有的 hook 配置不受影响
+
+如果装了多个平台，需要显式指定：`bash install.sh --upgrade --platform claude`。
+
 ## 来源边界
 
 这一步已经把安装输出、状态说明、文档和回归测试统一到同一份来源定义。仓库里的权威清单是 `scripts/source-registry.tsv`，URL 和文件路由也统一通过 `scripts/source-registry.sh` 读取。

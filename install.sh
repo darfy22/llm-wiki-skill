@@ -12,6 +12,7 @@ DRY_RUN=0
 TARGET_DIR=""
 INSTALL_HOOKS=0
 UNINSTALL_HOOKS=0
+UPGRADE=0
 
 # 这些项目都在运行时会被读取或链接：
 # - 入口与说明文件：README / CLAUDE / AGENTS / CHANGELOG
@@ -49,6 +50,7 @@ usage() {
   bash install.sh --platform claude --install-hooks
   bash install.sh --install-hooks
   bash install.sh --uninstall-hooks
+  bash install.sh --upgrade [--platform <claude|codex|openclaw|auto>]
 
 选项：
   --platform         目标平台。默认 auto；只有检测到唯一平台时才会自动安装。
@@ -56,6 +58,7 @@ usage() {
   --target-dir       指定技能目标目录（主要给兼容入口内部调用）。
   --install-hooks    注册 Claude Code 的 SessionStart hook。
   --uninstall-hooks  移除 Claude Code 的 SessionStart hook。
+  --upgrade          拉取最新代码并更新已安装的 llm-wiki（保留 hook 配置）。
   -h, --help         显示帮助。
 EOF
 }
@@ -443,6 +446,10 @@ while [ $# -gt 0 ]; do
       UNINSTALL_HOOKS=1
       shift
       ;;
+    --upgrade)
+      UPGRADE=1
+      shift
+      ;;
     -h|--help)
       usage
       exit 0
@@ -458,6 +465,83 @@ done
 if [ "$INSTALL_HOOKS" -eq 1 ] && [ "$UNINSTALL_HOOKS" -eq 1 ]; then
   err "--install-hooks 和 --uninstall-hooks 不能同时使用"
   exit 1
+fi
+
+if [ "$UPGRADE" -eq 1 ]; then
+  if [ "$PLATFORM" = "auto" ]; then
+    detected_platforms=()
+    for p in claude codex openclaw; do
+      skill_root_candidate="$(resolve_skill_root "$p")"
+      [ -d "$skill_root_candidate/$SKILL_NAME" ] && detected_platforms+=("$p")
+    done
+
+    if [ "${#detected_platforms[@]}" -eq 0 ]; then
+      err "没有检测到已安装的 llm-wiki，请先运行安装"
+      exit 1
+    fi
+
+    if [ "${#detected_platforms[@]}" -gt 1 ]; then
+      if [ "$PLATFORM_EXPLICIT" -eq 0 ]; then
+        err "检测到多个已安装平台：${detected_platforms[*]}。请显式传入 --platform"
+        exit 1
+      fi
+    fi
+
+    UPGRADE_PLATFORMS=("${detected_platforms[@]}")
+  else
+    UPGRADE_PLATFORMS=("$PLATFORM")
+  fi
+
+  echo ""
+  echo "================================"
+  echo "  llm-wiki 升级"
+  echo "================================"
+  echo ""
+
+  if [ -d "$SCRIPT_DIR/.git" ]; then
+    info "从远程拉取最新代码..."
+    if [ "$DRY_RUN" -eq 1 ]; then
+      printf '[dry-run] git -C %s pull\n' "$SCRIPT_DIR"
+    else
+      git -C "$SCRIPT_DIR" pull || {
+        err "git pull 失败，请检查网络或手动拉取后重试"
+        exit 1
+      }
+    fi
+    ok "代码已拉取到最新"
+  else
+    warn "当前目录不是 git 仓库，跳过 git pull"
+  fi
+
+  load_dependency_skills
+
+  for upgrade_platform in "${UPGRADE_PLATFORMS[@]}"; do
+    upgrade_root="$(resolve_skill_root "$upgrade_platform")"
+    upgrade_target="$upgrade_root/$SKILL_NAME"
+
+    echo ""
+    info "更新 $upgrade_platform 的 llm-wiki..."
+    echo "  目标目录：$upgrade_target"
+
+    if [ ! -d "$upgrade_target" ]; then
+      err "$upgrade_platform 尚未安装 llm-wiki：$upgrade_target"
+      continue
+    fi
+
+    run_cmd mkdir -p "$upgrade_target"
+    install_bundle "$upgrade_target"
+    install_dependency_skills "$upgrade_root"
+    install_node_deps "$upgrade_root"
+    install_uv_tools
+    ok "$upgrade_platform 的 llm-wiki 已更新"
+  done
+
+  print_source_boundary
+  check_environment
+
+  echo ""
+  ok "llm-wiki 升级完成"
+  exit 0
 fi
 
 if [ "$PLATFORM" = "auto" ] && { [ "$INSTALL_HOOKS" -eq 1 ] || [ "$UNINSTALL_HOOKS" -eq 1 ]; }; then
