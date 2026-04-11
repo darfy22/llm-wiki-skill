@@ -381,6 +381,21 @@ test_hook_session_start_outputs_context_when_wiki_exists() {
     assert_text_contains "$output" "[llm-wiki] 检测到知识库"
 }
 
+test_hook_session_start_returns_empty_json_without_wiki() {
+    local tmp_dir output
+    tmp_dir="$(mktemp -d)"
+    trap 'rm -rf "$tmp_dir"' RETURN
+
+    mkdir -p "$tmp_dir/home"
+
+    output="$(
+        HOME="$tmp_dir/home" \
+        bash "$REPO_ROOT/scripts/hook-session-start.sh" 2>&1
+    )" || fail "hook-session-start.sh should succeed without wiki"
+
+    [ "$output" = "{}" ] || fail "Expected hook-session-start.sh to return {} without wiki"
+}
+
 test_install_registers_and_uninstalls_session_start_hook() {
     local tmp_dir settings_path output
     tmp_dir="$(mktemp -d)"
@@ -429,6 +444,21 @@ exit 0'
 test_platform_entries_mention_hook_and_wiki_context() {
     assert_file_contains "$REPO_ROOT/platforms/claude/CLAUDE.md" "--install-hooks"
     assert_file_contains "$REPO_ROOT/platforms/codex/AGENTS.md" "优先查阅 wiki/index.md"
+}
+
+test_skill_md_phase5_lint_mentions_confidence_audit() {
+    local section
+    section="$(sed -n '/## 工作流 5：lint/,/## 工作流 6：status/p' "$REPO_ROOT/SKILL.md")"
+
+    assert_text_contains "$section" "置信度报告"
+    assert_text_contains "$section" "AMBIGUOUS"
+    assert_text_contains "$section" "抽查标注为 EXTRACTED 的条目"
+}
+
+test_changelog_mentions_wiki_core_upgrades() {
+    assert_file_contains "$REPO_ROOT/CHANGELOG.md" "purpose.md"
+    assert_file_contains "$REPO_ROOT/CHANGELOG.md" "SessionStart hook"
+    assert_file_contains "$REPO_ROOT/CHANGELOG.md" "delete 工作流"
 }
 
 test_readme_sections() {
@@ -630,6 +660,8 @@ test_legacy_wiki_defaults_missing_fields_without_forcing_migration() {
     assert_text_contains "$output" "language=zh"
     assert_text_contains "$output" "migration_required=no"
     assert_text_contains "$output" "missing_optional_raw_dirs=raw/xiaohongshu,raw/zhihu"
+    assert_text_contains "$output" "purpose_file=missing"
+    assert_text_contains "$output" "cache_file=missing"
 
     bash "$REPO_ROOT/scripts/wiki-compat.sh" validate "$wiki_root" > /dev/null 2>&1 \
         || fail "legacy wiki validate should accept the old layout"
@@ -655,6 +687,22 @@ test_legacy_wiki_lazily_creates_new_source_dirs_without_moving_old_materials() {
     )" || fail "inspect should still succeed after lazily creating a source directory"
 
     assert_text_contains "$output" "missing_optional_raw_dirs=raw/zhihu"
+}
+
+test_new_wiki_compat_reports_purpose_and_cache_present() {
+    local tmp_dir wiki_root output
+    tmp_dir="$(mktemp -d)"
+    trap 'rm -rf "$tmp_dir"' RETURN
+
+    wiki_root="$tmp_dir/new-wiki"
+    bash "$REPO_ROOT/scripts/init-wiki.sh" "$wiki_root" "新知识库" "中文" > /dev/null
+
+    output="$(
+        bash "$REPO_ROOT/scripts/wiki-compat.sh" inspect "$wiki_root" 2>&1
+    )" || fail "new wiki inspect should succeed"
+
+    assert_text_contains "$output" "purpose_file=present"
+    assert_text_contains "$output" "cache_file=present"
 }
 
 test_readme_aligns_source_boundary_to_registry() {
@@ -727,8 +775,11 @@ test_skill_md_phase2_has_delete_workflow_and_route
 test_delete_helper_scans_reference_files
 test_skill_md_phase3_query_mentions_persistence_and_duplicate_handling
 test_hook_session_start_outputs_context_when_wiki_exists
+test_hook_session_start_returns_empty_json_without_wiki
 test_install_registers_and_uninstalls_session_start_hook
 test_platform_entries_mention_hook_and_wiki_context
+test_skill_md_phase5_lint_mentions_confidence_audit
+test_changelog_mentions_wiki_core_upgrades
 test_readme_sections
 test_uv_tool_install_failure_is_graceful
 test_skill_md_routes_wechat_to_new_tool
@@ -746,6 +797,7 @@ test_source_registry_validation_passes
 test_source_registry_matches_urls_and_files_from_shared_table
 test_legacy_wiki_defaults_missing_fields_without_forcing_migration
 test_legacy_wiki_lazily_creates_new_source_dirs_without_moving_old_materials
+test_new_wiki_compat_reports_purpose_and_cache_present
 test_readme_aligns_source_boundary_to_registry
 test_skill_status_and_ingest_align_to_registry
 test_schema_template_aligns_source_boundary_to_registry

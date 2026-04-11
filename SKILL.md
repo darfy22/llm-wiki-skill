@@ -570,6 +570,11 @@ bash ${SKILL_DIR}/scripts/adapter-state.sh classify-run <source_id> <exit_code> 
    - 找出 index 中有但文件不存在的条目
    - 找出文件存在但 index 中没记录的页面
 
+   **置信度报告**（统计 `EXTRACTED` / `INFERRED` / `AMBIGUOUS` / `UNVERIFIED`）：
+   - 高亮 `AMBIGUOUS` 条目，提醒用户优先验证
+   - 抽查标注为 EXTRACTED 的条目，检查是否能在原始素材里找到对应原文
+   - 如果发现 EXTRACTED 无法回溯到原文，提示用户回退为更低置信度或重新整理
+
 3. **输出报告**（按 `WIKI_LANG` 切换语言）：
 
    **zh**：
@@ -589,6 +594,12 @@ bash ${SKILL_DIR}/scripts/adapter-state.sh classify-run <source_id> <exit_code> 
 
    缺失索引：
    - {文件名} 存在但未记录在 index.md 中
+
+   置信度报告：
+   - EXTRACTED：{N}
+   - INFERRED：{N}
+   - AMBIGUOUS：{N}
+   - UNVERIFIED：{N}
    ```
    （英文版按「输出语言规则」生成，结构相同。）
 

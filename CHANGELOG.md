@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.5.0 (2026-04-11)
+
+### 新增
+
+- `purpose.md` 研究方向模板：初始化后直接生成，给后续整理提供明确方向
+- `.wiki-cache.json` 本地缓存：为重复素材跳过提供基础设施
+- `query` 结果持久化模板：支持把综合回答写回 `wiki/queries/`
+- delete 工作流说明和辅助脚本：支持级联删除素材并扫描引用
+- Claude Code `SessionStart hook` 支持：可在会话开始时注入 wiki 上下文提示
+
+### 改进
+
+- `SKILL.md`：重构 `ingest` 为两步流程，增加缓存检查、置信度标注和降级说明
+- `SKILL.md`：`batch-ingest` 增加无变化跳过统计，`status` 增加 `purpose.md` 状态展示
+- `SKILL.md`：`query` 增加重复检测、`derived: true` 标记和自引用防护
+- `SKILL.md`：`lint` 增加置信度报告和 EXTRACTED 抽查说明
+- `wiki-compat.sh`：兼容旧知识库时同时报告 `purpose.md` 和 `.wiki-cache.json` 状态
+- `install.sh`：支持注册和移除 Claude Code 的 `SessionStart hook`
+
 ## v0.4.0 (2026-04-05)
 
 ### 新增

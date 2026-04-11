@@ -150,6 +150,17 @@ missing_optional_raw_dirs() {
   fi
 }
 
+file_presence() {
+  local wiki_root="$1"
+  local relative_path="$2"
+
+  if [ -e "$wiki_root/$relative_path" ]; then
+    printf 'present\n'
+  else
+    printf 'missing\n'
+  fi
+}
+
 validate_layout() {
   local wiki_root="$1"
   local failed=0
@@ -196,15 +207,17 @@ EOF
 
 print_inspect() {
   local wiki_root="$1"
-  local schema_version language optional_dirs legacy_mode
+  local schema_version language optional_dirs legacy_mode purpose_file cache_file
 
   validate_layout "$wiki_root"
 
   schema_version="$(resolved_schema_version "$wiki_root")"
   language="$(resolved_language "$wiki_root")"
   optional_dirs="$(missing_optional_raw_dirs "$wiki_root")"
+  purpose_file="$(file_presence "$wiki_root" "purpose.md")"
+  cache_file="$(file_presence "$wiki_root" ".wiki-cache.json")"
 
-  if [ "$schema_version" = "1.0" ] || [ "$optional_dirs" != "-" ]; then
+  if [ "$schema_version" = "1.0" ] || [ "$optional_dirs" != "-" ] || [ "$purpose_file" = "missing" ] || [ "$cache_file" = "missing" ]; then
     legacy_mode="yes"
   else
     legacy_mode="no"
@@ -216,6 +229,8 @@ print_inspect() {
   printf 'legacy_mode=%s\n' "$legacy_mode"
   printf 'migration_required=no\n'
   printf 'missing_optional_raw_dirs=%s\n' "$optional_dirs"
+  printf 'purpose_file=%s\n' "$purpose_file"
+  printf 'cache_file=%s\n' "$cache_file"
 }
 
 ensure_source_dir() {
