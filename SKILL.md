@@ -506,9 +506,30 @@ bash ${SKILL_DIR}/scripts/adapter-state.sh classify-run <source_id> <exit_code> 
    - 按 `WIKI_LANG` 用对应语言回答用户的问题
    - 标注信息来源（引用 wiki 页面，用 `[[页面名]]` 格式）
    - 如果多个素材有不同观点，分别列出并标注来源
-5. **建议回写**：
-   - 如果这个回答产生了有价值的分析或综合，询问用户是否保存为新的 wiki 页面
-   - 如果保存 → 创建新页面（`wiki/synthesis/` 或 `wiki/comparisons/`），更新 index.md 和 log.md
+5. **判断是否值得持久化**：
+   - 如果回答引用了 3 个以上来源的综合分析，提示用户："是否保存此回答到知识库？"
+   - 少于 3 个来源时，默认只做即时回答，不主动建议持久化
+
+6. **重复检测**：
+   - 持久化前，先在 `wiki/queries/` 下搜索同主题页面
+   - 通过 frontmatter tags 和 title 匹配，判断是否已有同主题 query 页面
+   - 如果已有，提示用户是“更新现有页面”还是“新建一页”
+   - 如果用户选择更新旧页面，旧版页面增加 `superseded-by` 标记
+
+7. **保存 query 页面**：
+   - 用 `templates/query-template.md` 生成页面
+   - 保存路径使用 `wiki/queries/{date}-{short-hash}.md`，避免同主题命名冲突
+   - frontmatter 必须包含 `type: query` 和 `derived: true`
+   - `derived: true` 表示这是衍生内容，不是一手素材
+
+8. **自引用防护**：
+   - query 页面在后续 ingest 分析里视为二级来源，不作为主要知识来源
+   - 如果后续页面引用 query 页面里的信息，相关关系统一按 `INFERRED` 处理
+   - ingest 不主动扫描 `wiki/queries/`；只有当前问题确实需要时，才把 query 页面作为补充材料读取
+
+9. **更新索引和日志**：
+   - 保存成功后，在 index.md 中加入 query 条目
+   - 同时在 log.md 中追加一条 query 保存记录
 
 ---
 

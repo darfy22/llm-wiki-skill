@@ -348,6 +348,18 @@ EOF
     assert_text_contains "$output" "wiki/topics/大语言模型.md"
 }
 
+test_skill_md_phase3_query_mentions_persistence_and_duplicate_handling() {
+    local section
+    section="$(sed -n '/## 工作流 4：query/,/## 工作流 5：lint/p' "$REPO_ROOT/SKILL.md")"
+
+    assert_text_contains "$section" "wiki/queries/{date}-{short-hash}.md"
+    assert_text_contains "$section" "derived: true"
+    assert_text_contains "$section" "引用了 3 个以上来源"
+    assert_text_contains "$section" "通过 frontmatter tags 和 title 匹配"
+    assert_text_contains "$section" "superseded-by"
+    assert_text_contains "$section" "不作为主要知识来源"
+}
+
 test_readme_sections() {
     assert_file_contains "$REPO_ROOT/README.md" "## 前置条件"
     assert_file_contains "$REPO_ROOT/README.md" "## 常见问题"
@@ -642,6 +654,7 @@ test_skill_md_phase2_batch_ingest_mentions_cache_skip_summary
 test_skill_md_phase2_status_mentions_purpose_presence
 test_skill_md_phase2_has_delete_workflow_and_route
 test_delete_helper_scans_reference_files
+test_skill_md_phase3_query_mentions_persistence_and_duplicate_handling
 test_readme_sections
 test_uv_tool_install_failure_is_graceful
 test_skill_md_routes_wechat_to_new_tool
