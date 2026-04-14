@@ -1,7 +1,5 @@
 # CLAUDE.md
 
-这是 llm-wiki 在 Claude Code 下的入口文件。
-
 先看这三个文件：
 
 - [README.md](README.md)：多平台总说明
@@ -16,23 +14,25 @@
 bash install.sh --platform claude
 ```
 
-这会把 llm-wiki 安装到 `~/.claude/skills/llm-wiki`，同时准备好仓库里自带的依赖 skill。
+> `setup.sh` 是 `install.sh --platform claude` 的兼容包装，老用户可以继续用。
 
-## 兼容说明
+## 推送前测试规则
 
-- `setup.sh` 仍然保留，给老的 Claude 安装方式继续用
-- `setup.sh` 现在只是 `install.sh --platform claude` 的兼容包装
-- 不要把这个仓库当成 Claude 专属仓库；Codex 和 OpenClaw 也共用同一套核心内容
+每次 `git push` 前必须验证，按改动范围选深度：
 
-## 使用顺序
+### 第一层：快速检查（Claude Code 直接跑，1 分钟内）
 
-安装完成后，按 [SKILL.md](SKILL.md) 中的工作流继续执行：
+不管改了什么都跑这 3 项：
 
-1. `init`
-2. `ingest`
-3. `batch-ingest`
-4. `query`
-5. `digest`
-6. `lint`
-7. `status`
-8. `graph`
+1. `bash install.sh --dry-run --platform codex` — 安装脚本不报错
+2. 改过的脚本如果有 `tests/fixtures/`，跑一下 diff 预期输出
+3. `grep -r '/Users/kangjiaqi\|康佳琦' scripts/ templates/ tests/ SKILL.md` — 没泄露隐私路径
+
+### 第二/三层：工作流测试（你在 codex 终端手动跑）
+
+- **第二层**（只改了 SKILL.md 里个别工作流）：Claude Code 生成测试提示词写到文件，告诉你路径，你复制到 codex 跑涉及的工作流
+- **第三层**（多工作流改动 / 版本号升级）：Claude Code 生成全量回归提示词，你在 codex 跑完整流程（init → ingest → lint → digest → graph）
+
+素材复用 `~/Desktop/llm-wiki-cowork-test/raw-input/` 里的 3 篇文章，不用每次重新找。
+
+codex 跑完后把 `test-report.md` 发回来，Claude Code 确认无阻塞问题后才执行 `git push`。

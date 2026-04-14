@@ -9,7 +9,7 @@ shopt -s nullglob
 
 WIKI_ROOT="${1:-.}"
 WIKI_DIR="$WIKI_ROOT/wiki"
-INDEX_FILE="$WIKI_DIR/index.md"
+INDEX_FILE="$WIKI_ROOT/index.md"
 
 if [ ! -d "$WIKI_DIR" ]; then
   echo "ERROR: wiki 目录不存在：$WIKI_DIR" >&2

@@ -1,5 +1,28 @@
 # Changelog
 
+## v2.2.0 (2026-04-14)
+
+### 新增
+
+- `scripts/lint-runner.sh`：lint 机械检查脚本（孤立页面 / 断链 / index 一致性），独立于 AI 判断
+- `tests/fixtures/lint-sample-wiki/`：lint 脚本回归测试夹具（含 `C++` 特殊字符、别名链接 `[[X|显示]]`、孤立页面等边界情况）
+- `tests/expected/lint-output.txt`：lint 脚本预期输出
+- SKILL.md digest 多格式模板：深度报告、对比表、时间线三种输出格式及文件命名约定
+- SKILL.md digest 路由表：新增"对比/时间线"触发词
+- `templates/schema-template.md` 关系类型词汇表：可选的图谱关系标注词汇（实现/依赖/对比/矛盾/衍生）
+- SKILL.md ingest 隐私自查：首次进入 ingest 必须确认的 y/n 隐私检查流程
+
+### 改进
+
+- SKILL.md lint 工作流：拆分为"Step 0 脚本机械检查 + AI 层面判断"两阶段
+- SKILL.md graph 工作流：明确 AI 默认只画无标注箭头，关系词汇表仅供手动美化
+- CLAUDE.md：新增"推送前测试规则"（三层验证策略），删除与 SKILL.md 重复的使用顺序列表
+
+### 修复
+
+- `lint-runner.sh`：`INDEX_FILE` 路径从 `$WIKI_DIR/index.md` 改为 `$WIKI_ROOT/index.md`（与 schema 约定的目录结构一致）
+- 测试夹具 `lint-sample-wiki`：`index.md` 从 `wiki/` 移到知识库根目录，符合 schema 约定
+
 ## v2.1.0 (2026-04-13)
 
 ### 新增
