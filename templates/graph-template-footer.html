@@ -581,8 +581,18 @@
       e.preventDefault();
       if (a.classList.contains("wikilink--dead")) return;
       var targetId = a.getAttribute("data-target");
-      if (targetId) focusNode(targetId, { pulse: true, openDrawer: true });
+      if (targetId) {
+        syncSearchWithNode(targetId);
+        focusNode(targetId, { pulse: true, openDrawer: true });
+      }
     });
+  }
+
+  function syncSearchWithNode(nodeId) {
+    var n = findNode(nodeId);
+    if (!n) return;
+    dom.search.value = n.label || n.id;
+    dom.searchDropdown.setAttribute("data-open", "0");
   }
 
   function openDrawer(nodeId) {
